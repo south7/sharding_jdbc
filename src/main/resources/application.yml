@@ -1,0 +1,44 @@
+server:
+  port: 33066
+
+  # 1.首先定义数据源m1，并对m1进行实际的参数配置。
+  # 2.指定table_branch表的数据分布情况，他分布在m1.table_branch_1，m1.table_branch_2
+  # 3.指定table_branch表的主键生成策略为SNOWFLAKE，SNOWFLAKE是一种分布式自增算法，保证id全局唯一
+  # 4.定义table_branch分片策略，order_id为偶数的数据落在table_branch_1，为奇数的落在table_branch_2，分表策略的表达式为 table_branch_$->{order_id % 2 + 1}
+spring:
+  application:
+    name: sharding-jdbc
+  main:
+    allow‐bean‐definition‐overriding: true
+  shardingsphere:
+    datasource:
+      names: m1
+      m1:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.1.36:3307/stategrid?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+        username: root
+        password: root
+    sharding:
+      tables:
+        table_branch:
+          actual-data-nodes: m1.table_branch_$->{1..2}
+          key-generator:
+            column: id
+            type: SNOWFLAKE
+          table-strategy:
+            inline:
+              sharding-column: id
+              algorithm-expression: table_branch_$->{id%2+1}
+    props:
+      sql:
+        show: true
+
+
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+
+
+
